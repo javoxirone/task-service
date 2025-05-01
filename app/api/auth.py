@@ -1,24 +1,25 @@
 from fastapi import APIRouter
-from app.crud.user import create_new_user
-from app.schemas.user import UserInRequest, UserInLogin
+
+from app.core.security import refresh_access_token
+from app.crud.user import create_new_user, authenticate_user
+from app.schemas.user import UserInRequest, UserInLogin, RefreshToken
 
 router = APIRouter()
 
 
 @router.post("/register")
 async def register(user: UserInRequest):
-    print(user)
     new_user = create_new_user(user)
-    print(new_user)
     return {"message": "User created successfully"}
 
 
 @router.post("/login")
 async def login(user: UserInLogin):
-    print(user)
-    return {"message": "User logged in successfully"}
+    tokens = authenticate_user(user)
+    return tokens
 
 
 @router.post("/refresh")
-async def get_user():
-    return {"message": "User details"}
+async def get_user(token: RefreshToken):
+    new_token = refresh_access_token(token.refresh)
+    return new_token

@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from typing import Optional, Union, Dict
+
+from fastapi import HTTPException
 from jose import jwt
 from passlib.context import CryptContext
 
 from app.config import settings
+from app.schemas.user import RefreshToken, Token
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -37,3 +40,72 @@ def create_refresh_token(data: dict) -> str:
     to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
+
+
+def verify_token(token: str, token_type: str = "access") -> Dict[str, any]:
+    """
+    Verify that a token is valid and not expired.
+
+    Args:
+        token: The JWT token to verify
+        token_type: The expected token type ('access' or 'refresh')
+
+    Returns:
+        The decoded token payload if valid
+
+    Raises:
+        HTTPException: If token is invalid, expired, or of wrong type
+    """
+    try:
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM]
+        )
+
+        if payload.get("type") != token_type:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Token type invalid, expected '{token_type}'"
+            )
+
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401,
+            detail="Token has expired"
+        )
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Could not validate credentials"
+        )
+
+
+def refresh_access_token(refresh_token: str) -> Token:
+    """
+    Generate a new access token using a valid refresh token.
+
+    Args:
+        refresh_token: The refresh token
+
+    Returns:
+        Dict containing new access and refresh tokens
+
+    Raises:
+        HTTPException: If refresh token is invalid or expired
+    """
+    # Verify the refresh token
+    payload = verify_token(refresh_token, "refresh")
+
+    # Remove the exp and type claims from the payload for the new tokens
+    if "exp" in payload:
+        del payload["exp"]
+    if "type" in payload:
+        del payload["type"]
+
+    # Create new tokens
+    new_access_token = create_access_token(payload)
+    new_refresh_token = create_refresh_token(payload)
+    token = Token(access=new_access_token, refresh=new_refresh_token)
+    return token
