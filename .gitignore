@@ -1,0 +1,51 @@
+ Python cache files
+__pycache__/
+*.py[cod]
+
+ Virtual environment
+venv/
+.env
+
+ FastAPI specific
+*.db
+*.sqlite3
+*.log
+
+ IDE files
+.idea/
+.vscode/
+
+ Jupyter Notebook
+.ipynb_checkpoints
+
+ Misc
+.DS_Store
+Thumbs.db
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+
+ Coverage reports
+htmlcov/
+coverage.xml
+*.cover
+
+ Pytest
+.cache/
+*.cover
+nosetests.xml
+test-results/
+
+ Type hinting
+mypy_cache/
+
+ Pyre type checker
+.pyre/
+
+ Python environment
+.Python
+
+ PyCharm
+*.iml
