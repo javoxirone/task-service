@@ -13,7 +13,6 @@ class User(Base):
     hashed_password = Column(String(100), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Relationship with tasks
     tasks = relationship("Task", back_populates="owner")
 
 

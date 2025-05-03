@@ -2,11 +2,11 @@ from datetime import datetime, timedelta
 from typing import Optional, Union, Dict
 
 from fastapi import HTTPException
-from jose import jwt
+from jose import jwt, JWTError
 from passlib.context import CryptContext
 
 from app.config import settings
-from app.schemas.user import RefreshToken, Token
+from app.schemas.auth import Token
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -95,17 +95,32 @@ def refresh_access_token(refresh_token: str) -> Token:
     Raises:
         HTTPException: If refresh token is invalid or expired
     """
-    # Verify the refresh token
     payload = verify_token(refresh_token, "refresh")
 
-    # Remove the exp and type claims from the payload for the new tokens
     if "exp" in payload:
         del payload["exp"]
     if "type" in payload:
         del payload["type"]
 
-    # Create new tokens
     new_access_token = create_access_token(payload)
     new_refresh_token = create_refresh_token(payload)
     token = Token(access=new_access_token, refresh=new_refresh_token)
     return token
+
+
+
+def check_auth(auth_header: str) -> int:
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+
+    token = auth_header.split(" ")[1]
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        user_id = payload.get("id")
+
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token: user_id not found")
+        return user_id
+    except JWTError as e:
+        print(f"JWT decode error: {str(e)}")
+        raise HTTPException(status_code=401, detail=f"Invalid authentication token: {str(e)}")

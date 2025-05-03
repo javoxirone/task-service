@@ -2,7 +2,8 @@ from fastapi import APIRouter
 
 from app.core.security import refresh_access_token
 from app.crud.user import create_new_user, authenticate_user
-from app.schemas.user import UserInRequest, UserInLogin, RefreshToken
+from app.schemas.user import UserInRequest
+from app.schemas.auth import UserInLogin, RefreshToken
 
 router = APIRouter()
 
