@@ -30,7 +30,8 @@ def create_new_user(data: UserInRequest):
 
 def authenticate_user(data: UserInLogin) -> Token:
     user_in_db = get_user_by_email(data.email)
-
+    if not user_in_db:
+        raise HTTPException(status_code=404, detail="User not found")
     if not verify_password(data.password, user_in_db.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect password")
 
